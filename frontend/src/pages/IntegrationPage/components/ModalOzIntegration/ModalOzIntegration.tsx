@@ -1,26 +1,38 @@
 import axios from 'axios';
 
-export const ModalOzIntegration = ({ onClose }: { onClose: () => void }) => {
+export const ModalOzIntegration = ({ 
+   onClose,
+   setOzIntegrate,
+}: {
+   onClose: () => void,
+   setOzIntegrate: (item: object | undefined) => void,
+}) => {
    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       const formData = new FormData(e.currentTarget);
       const apiKey = formData.get('api-key') as string;
       const clientId = formData.get('client-id') as string;
-
+      const userString = localStorage.getItem('user')
+      let userObj, userId
+         if (userString){
+            userObj = JSON.parse(userString)
+            userId = userObj.id
+         }
       try {
          const payload = {
             apiKey,
             clientId,
+            userId
          };
          const response = await axios.post(
-            'http://localhost:8081/oz-integration/token',
-            { payload }
-         );
-         if (response.status === 201 || response.status === 200) {
-            localStorage.setItem('oz-integration-key', JSON.stringify(payload));
+            'http://localhost:8081/users/oz-integrate', payload);
+         
+         console.log(response.data)
+         if (response.data){
             onClose();
+            setOzIntegrate({apiKey, clientId})
          } else {
-            alert('Ошибка при подключении: ' + response.data.messsage);
+            alert('Ошибка при подключении');
          }
       } catch (error) {
          alert('Произошла ошибка при отправке запроса. Попробуйте еще раз.');

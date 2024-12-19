@@ -6,6 +6,12 @@ import { RoutePath } from '../../../types/RoutePath.enum';
 
 export const Header = () => {
    const { logout } = useAuth();
+
+   const userString = localStorage.getItem('user');
+   let userObj
+   if (userString){
+      userObj = JSON.parse(userString)
+   }
    return (
       <header>
          <div className="flex justify-between items-center p-2 px-10 border border-b-[#0000001A]">
@@ -26,7 +32,7 @@ export const Header = () => {
                   <div>
                      <div>
                         <span className="font-inter text-md text-[#9D9D9D] bg-white antialiased font-feature-default">
-                           Никита
+                           {userObj.name}
                         </span>
                      </div>
                      <div>

@@ -54,33 +54,27 @@ export default function ListItemsPage() {
    >(null);
    const [searchText, setSearchText] = useState<string>('');
 
+   const userString = localStorage.getItem('user')
+   
+
    const fetchProducts = async () => {
-      const response = await axios.get('http://localhost:8081/products');
+      let userObj
+      if (userString){
+         userObj = JSON.parse(userString)
+      }
+      
+      const response = await axios.get('http://localhost:8081/products', {params: userObj});
       setProducts(response.data);
    };
 
-   const fetchWarehouseWildberriesProducts = async () => {
-      const response = await axios.get(
-         'http://localhost:8081/products/warehouse-wildberries'
-      );
-      setWarehouseWildberries(response.data);
-   };
+   // const fetchWarehouseWildberriesProducts = async () => {
+   //    const response = await axios.get(
+   //       'http://localhost:8081/products/warehouse-wildberries'
+   //    );
+   //    setWarehouseWildberries(response.data);
+   // };
 
    const updateProducts = async () => {
-      const getToken = localStorage.getItem('wb-token');
-      if (!getToken) {
-         return;
-      }
-      console.log(getToken);
-      await axios.post(
-         'http://localhost:8081/products/update',
-         {},
-         {
-            headers: {
-               Authorization: `Bearer ${getToken}`,
-            },
-         }
-      );
       fetchProducts();
    };
    useEffect(() => {
@@ -98,9 +92,9 @@ export default function ListItemsPage() {
       fetchProducts();
    }, []);
 
-   useEffect(() => {
-      fetchWarehouseWildberriesProducts();
-   }, []);
+   // useEffect(() => {
+   //    fetchWarehouseWildberriesProducts();
+   // }, []);
 
    return (
       <main>

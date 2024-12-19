@@ -27,22 +27,26 @@ export const TableItem: FC<{ products: IProductsProps[] }> = ({ products }) => {
                            {product.vendorCode || '-'}
                         </td>
                         <td className="px-6 py-4">
-                           {product.photos && product.photos[0]?.square ? (
-                              <img
-                                 src={product.photos[0].square}
-                                 alt={`Фото ${product.title}`}
-                                 className="h-10 w-10 object-cover rounded-md"
-                              />
-                           ) : (
-                              '-'
-                           )}
+                           {
+                              product.photos && product.photos[0]?.square ? (
+                                 <img
+                                    src={product.photos[0].square}
+                                    alt={`Фото ${product.title}`}
+                                    className="h-10 w-10 object-cover rounded-md"
+                                 />
+                              ) : product.photos && product.photos[0] ? (
+                                 <img
+                                    src={product.photos[0]}
+                                    alt={`Фото ${product.title}`}
+                                    className="h-10 w-10 object-cover rounded-md"
+                                 />
+                              ) : (
+                                 '-'
+                              )
+                           }
                         </td>
                         <td className="px-6 py-4 font-medium">
-                           {Array.isArray(product.sizes) &&
-                           product.sizes.length > 0 &&
-                           product.sizes[0].skus
-                              ? product.sizes[0].skus.join(', ')
-                              : '-'}
+                           {product.source}
                         </td>
                         <td className="px-6 py-4">{product.title || '-'}</td>
                         {/* <td className="px-6 py-4">

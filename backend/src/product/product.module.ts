@@ -4,10 +4,10 @@ import { ProductController } from './product.controller';
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { Product } from "./product.entity";
 import { HttpModule } from "@nestjs/axios";
-import { WbIntegrationModule } from "src/wb-integration/wb-integration.module";
+import { UsersModule } from "src/users/users.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Product]), HttpModule, WbIntegrationModule],
+  imports: [TypeOrmModule.forFeature([Product]), HttpModule, UsersModule],
   controllers: [ProductController],
   providers: [ProductService],
 })

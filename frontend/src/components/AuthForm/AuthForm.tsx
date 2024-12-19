@@ -2,6 +2,11 @@ import { FieldInput } from '@components/FieldInput/FieldInput';
 import { SubmitBtn } from '@components/SubmitBtn/SubmitBtn';
 import { AuthField } from '@constants/AuthForm.constants';
 import { Controller, useForm } from 'react-hook-form';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { RoutePath } from '../../types/RoutePath.enum';
+
+
 
 export const AuthForm = () => {
    const {
@@ -13,6 +18,15 @@ export const AuthForm = () => {
    } = useForm({
       mode: 'onChange',
    });
+   const navigate = useNavigate();
+
+   const register = async (data:any) => {
+      const response = await axios.post('http://localhost:8081/users/register', data);
+      if (response.data != 'error create user'){
+         localStorage.setItem('user', JSON.stringify(response.data));
+         navigate(RoutePath.MAIN);
+      }
+   }
 
    const handleInputValue = (name: string, value: string) => {
       setValue(name, value);
@@ -22,10 +36,7 @@ export const AuthForm = () => {
    const handleOnSubmit = (data: any) => {
       try {
          const userRegisterData = data;
-         localStorage.setItem(
-            'user_currently_register_data',
-            JSON.stringify(userRegisterData)
-         );
+         register(userRegisterData)
       } catch (error) {
          console.error("Sorry but we don't send your data!");
       }

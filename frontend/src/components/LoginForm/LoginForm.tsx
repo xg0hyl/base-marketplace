@@ -1,14 +1,16 @@
 import { FieldInput } from '@components/FieldInput/FieldInput';
 import { SubmitBtn } from '@components/SubmitBtn/SubmitBtn';
 import { LoginField } from '@constants/LoginForm.constants';
-import { useAuth } from '@hooks/useAuth';
+// import { useAuth } from '@hooks/useAuth';
 import { Controller, useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 import { RoutePath } from '../../types/RoutePath.enum';
+import { MdQuestionAnswer } from 'react-icons/md';
 
 export const LoginForm = () => {
-   const { loginUser } = useAuth();
+   // const { loginUser } = useAuth();
    const navigate = useNavigate();
 
    const {
@@ -26,13 +28,11 @@ export const LoginForm = () => {
       trigger(name);
    };
 
-   const handleOnSubmit = (data: any) => {
+   const handleOnSubmit = async (data: any) => {
       try {
-         const userLoginData = JSON.parse(
-            localStorage.getItem('user_currently_register_data')!
-         );
-         if (userLoginData) {
-            loginUser(userLoginData.username, userLoginData.password);
+         const response = await axios.post('http://localhost:8081/users/login', data);
+         if (response.data != 'Noauthorized'){
+            localStorage.setItem('user', JSON.stringify(response.data));
             navigate(RoutePath.MAIN);
          }
       } catch (error) {

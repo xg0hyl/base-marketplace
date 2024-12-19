@@ -2,10 +2,10 @@ import axios from 'axios';
 
 export const ModalWbIntegration = ({
    onClose,
-   setIsTokenSend,
+   setWbToken,
 }: {
    onClose: () => void,
-   setIsTokenSend: (item: boolean) => void,
+   setWbToken: (item: string | undefined) => void,
 }) => {
    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -13,19 +13,24 @@ export const ModalWbIntegration = ({
       const token = formData.get('token-auth') as string;
 
       try {
+         const userString = localStorage.getItem('user')
+         let userObj
+         if (userString){
+            userObj = JSON.parse(userString)
+         }
+         const data = {
+            token: token,
+            userId: userObj.id
+         }
          const response = await axios.post(
-            'http://localhost:8081/wb-integration/token',
-            { token }
-         );
-         if (response.status === 201 || response.status === 200) {
-            localStorage.setItem('wb-token', token);
+            'http://localhost:8081/users/wb-token',data);
+         if (response.data) {
             onClose();
-            setIsTokenSend(true);
+            setWbToken(token);
          } else {
-            alert('Ошибка при подключении: ' + response.data.messsage);
+            alert('Ошибка при подключении');
          }
       } catch (error) {
-         setIsTokenSend(false);
          alert('Произошла ошибка при отправке запроса. Попробуйте еще раз.');
       }
    };

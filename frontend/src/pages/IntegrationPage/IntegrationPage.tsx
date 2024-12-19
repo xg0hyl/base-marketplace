@@ -1,9 +1,10 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
-
 import { ModalOzIntegration } from './components/ModalOzIntegration/ModalOzIntegration';
 import { ModalWbIntegration } from './components/ModalWbIntegration/ModalWbIntegration';
 import { icons } from '../../assets/public/index';
+
+
 
 export default function IntegrationPage() {
    const [wbIntegrationIsOpen, setWbIntegrationIsOpen] =
@@ -12,6 +13,9 @@ export default function IntegrationPage() {
       useState<boolean>(false);
    const [isConnectedWb, setIsConnectedWb] = useState(false);
    const [isTokenSend, setIsTokenSend] = useState(false);
+   
+   const [wbToken, setWbToken] =  useState<string | undefined>();
+   const [ozIntegrate, setOzIntegrate] =  useState<object | undefined>();
 
    const [expandedWbInformation, setExpandedWbInformation] = useState(false);
    const [expandedOzInformation, setExpandedOzInformation] = useState(false);
@@ -29,44 +33,77 @@ export default function IntegrationPage() {
       setExpandedOzInformation(!expandedOzInformation);
 
    const handleCheckIfConnectedWb = async () => {
-      const getToken = localStorage.getItem('wb-token');
-      if (!getToken) {
+      if (!wbToken) {
          setIsConnectedWb(false);
          return;
       }
       try {
+         
          const response = await axios.get(
             'https://common-api.wildberries.ru/ping',
             {
-               headers: {
-                  Authorization: `Bearer ${getToken}`,
-               },
+               headers: { Authorization: `Bearer ${wbToken}` },
             }
          );
          setIsConnectedWb(true);
          return response.data;
       } catch (error) {
          setIsConnectedWb(false);
-         console.error('Error to connected in wildberries API');
+         console.error('Error to connected in wildberries API' + error);
       }
    };
 
-   useEffect(() => {
-      if (isTokenSend) {
-         handleCheckIfConnectedWb();
+   const getWbToken = async () => {
+      const userString = localStorage.getItem('user')
+      let userObj
+      if (userString){
+         userObj = JSON.parse(userString)
       }
-   }, [isTokenSend]);
+      const response = await axios.get('http://localhost:8081/users/wb-token', {params: userObj});
+
+      if (response.data){
+         setWbToken(response.data);
+      }
+
+   }
+
+   const getOzIntegrate = async () => {
+      const userString = localStorage.getItem('user')
+      let userObj
+      if (userString){
+         userObj = JSON.parse(userString)
+      }
+      const response = await axios.get('http://localhost:8081/users/oz-integrate', {params: userObj});
+
+      if (response.data.api_key && response.data.clientId){
+         setOzIntegrate(response.data);
+      }
+
+   }
+
+   // useEffect(() => {
+   //    handleCheckIfConnectedWb();
+   // }, []);
+
+   useEffect(() => {
+      getWbToken()
+      getOzIntegrate()
+   }, [])
+   
 
    return (
       <>
          {wbIntegrationIsOpen && (
             <ModalWbIntegration
-               setIsTokenSend={setIsTokenSend}
+               setWbToken={setWbToken}
                onClose={handleCloseWbIntegration}
             />
          )}
          {ozIntegrationIsOpen && (
-            <ModalOzIntegration onClose={handleCloseOzIntegration} />
+            <ModalOzIntegration 
+            onClose={handleCloseOzIntegration} 
+            setOzIntegrate={setOzIntegrate}
+            />
          )}
          <section>
             <div>
@@ -99,10 +136,10 @@ export default function IntegrationPage() {
                               <span
                                  className="text-sm"
                                  style={{
-                                    color: isConnectedWb ? '#81E08A' : 'red',
+                                    color: wbToken ? '#81E08A' : 'red',
                                  }}
                               >
-                                 {isConnectedWb
+                                 {wbToken
                                     ? 'Подключено'
                                     : 'Не подключено'}
                               </span>
@@ -117,8 +154,11 @@ export default function IntegrationPage() {
                         data-modal-target="integration-wb-modal"
                         data-modal-toggle="integration-wb-modal"
                         onClick={handleOpenWbIntegration}
+                        style={{
+                           color: wbToken ? '#81E08A' : '',
+                        }}
                      >
-                        Подключить
+                        {wbToken ? 'Подключенно' : 'Подключить'}
                      </button>
                   </div>
                </div>
@@ -140,8 +180,12 @@ export default function IntegrationPage() {
                         data-modal-target="integration-oz-modal"
                         data-modal-toggle="integration-oz-modal"
                         onClick={handleOpenOzIntegration}
+                        style={{
+                           color: ozIntegrate ? '#81E08A' : '',
+                        }}
                      >
-                        Подключить
+                        {ozIntegrate ? 'Подключенно' : 'Подключить'}
+
                      </button>
                   </div>
                </div>

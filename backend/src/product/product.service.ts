@@ -1,26 +1,26 @@
 import { HttpService } from "@nestjs/axios";
-import { Injectable } from '@nestjs/common';
+import { Body, Injectable } from '@nestjs/common';
 import { InjectRepository } from "@nestjs/typeorm";
 import { Product } from "./product.entity";
 import { Repository } from "typeorm";
 import { lastValueFrom } from "rxjs";
 import * as https from 'https';
-import { WbIntegrationService } from "src/wb-integration/wb-integration.service";
+import { UsersService } from "src/users/users.service";
 
 @Injectable()
 export class ProductService {
   constructor(
-    private readonly wbIntegrationService: WbIntegrationService,
+    private readonly userService: UsersService,
     private readonly httpService: HttpService,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>
   ) { }
 
   // Метод для получения товаров с Wildberries
-  async fetchWildberriesProduct() {
+  async fetchWildberriesProduct(userId:any) {
     try {
       // Достаем токен из сервиса который необходим для того чтобы прокинуть его в заголовок запроса
-      const token = await this.wbIntegrationService.getToken();
+      const token = await this.userService.getWbToken(userId);
       // Создаем переменную агента чтобы при подключении не ругались ошибки по типу CORS
       const agent = new https.Agent({
         rejectUnauthorized: false,
@@ -82,7 +82,7 @@ export class ProductService {
           });
         });
         
-        const stocksData = await this.fetchGetWarehouseStocksWildberriesProducts(allSkus);
+        const stocksData = await this.fetchGetWarehouseStocksWildberriesProducts(userId, allSkus);
         if (stocksData){
           productArr = productArr.map((p) => {
             p.sizes = p.sizes.map((size) => {
@@ -103,7 +103,6 @@ export class ProductService {
             return p;
           });
         }
-
         return productArr;
         // если токен или что-то будет не обнаружено или не подключено выдаст ошибку но запрос сам пройдет
       } else {
@@ -119,13 +118,13 @@ export class ProductService {
 
   // Метод получения остатков wildberries
 
-  async fetchGetWarehouseStocksWildberriesProducts(skus: object) {
+  async fetchGetWarehouseStocksWildberriesProducts(userId:any, skus: object) {
     try {
-      const token = await this.wbIntegrationService.getToken();
+      const token = await this.userService.getWbToken(userId);
       const agent = new https.Agent({
         rejectUnauthorized: false
       })
-      const warehouseData = await this.fetchGetWarehouseWildberriesProducts()
+      const warehouseData = await this.fetchGetWarehouseWildberriesProducts(userId)
       if (warehouseData.length == 0){
         return []
       }
@@ -147,9 +146,9 @@ export class ProductService {
     }
   }
 // получить склады
-  async fetchGetWarehouseWildberriesProducts() {
+  async fetchGetWarehouseWildberriesProducts(userId:any) {
     try {
-      const token = await this.wbIntegrationService.getToken();
+      const token = await this.userService.getWbToken(userId);
       const agent = new https.Agent({
         rejectUnauthorized: false
       })
@@ -167,34 +166,63 @@ export class ProductService {
   }
 
   // Метод для получения товаров с Ozon
-  async fetchOzonProducts() {
+  async fetchOzonProducts(userId: any) {
     try {
+
+      const apiData = await this.userService.getOzIntegration(userId);
+      if (!apiData){
+        return
+      }
       const response = await lastValueFrom(
-        this.httpService.get('https://api-seller.ozon.ru/v2/products/stocks', {
-          headers: {
-            'Client-Id': '2116437',
-            'Api-Key': '26e433e9-3a02-4d19-8664-15f0518b199c',
+        this.httpService.post(
+          'https://api-seller.ozon.ru/v2/product/list',
+          { filter: {} }, 
+          { 
+            headers: { 
+              'Client-Id': apiData.clientId,
+              'Api-Key': apiData.api_key,
+            },
           },
-        })
+        )
       );
 
-      const stocks = response.data.stocks;
+      const productItems= response.data.result.items;
 
-      if (Array.isArray(stocks)) {
-        return stocks.map((stock) => ({
-          subjectID: stock.product_id,
-          parentID: null,
-          title: stock.offer_id || 'Untitled Product',
-          description: 'No description available.',
-          source: "Ozon",
-          parentCategory: 'Unknown Category',
-          vendorCode: stock.offer_id || 'Unknown',
-          brand: 'Unknown',
-          photos: [],
-          dimensions: {},
-          characteristics: {},
-          sizes: {},
-        }));
+
+      if (Array.isArray(productItems)) {
+        const productIds = productItems.map((e) => e.product_id);
+
+        const response = await lastValueFrom(
+          this.httpService.post(
+            'https://api-seller.ozon.ru/v2/product/info/list',
+            { product_id: productIds }, 
+            { 
+              headers: { 
+                'Client-Id': apiData.clientId,
+                'Api-Key': apiData.api_key,
+              },
+            },
+          )
+        );
+
+        const res = response.data.result.items.map((p) => {
+          return {
+            subjectID: p.id,
+            title: p.name || 'Untitled Product',
+            description: p.description || 'No description available.',
+            source: "Ozon",
+            parentCategory: p.parentName || 'Unknown Category',
+            vendorCode: p.offer_id || 'Unknown',
+            brand: p.brand || 'Unknown',
+            photos: p.images || [],
+            sizes: [{amount: p.stocks.present}],
+            createdAt: p.created_at
+          }
+        });
+
+        return res
+
+
       } else {
         console.error('Invalid response format:', response.data);
         return [];
@@ -205,65 +233,79 @@ export class ProductService {
     }
   }
 
-  async updateProducts() {
-    const wbProducts = await this.fetchWildberriesProduct();
-    // const ozonProducts = await this.fetchOzonProducts();
+  // async updateProducts() {
+  //   const wbProducts = await this.fetchWildberriesProduct();
+  //   // const ozonProducts = await this.fetchOzonProducts();
 
-    const allProducts = [...wbProducts];
+  //   const allProducts = [...wbProducts];
 
-    if (allProducts.length === 0) {
-      console.log('No products to update.');
-      return [];
-    }
+  //   if (allProducts.length === 0) {
+  //     console.log('No products to update.');
+  //     return [];
+  //   }
 
-    for (const productData of allProducts) {
-      const existingProduct = await this.productRepository.findOne({
-        where: { subjectID: productData.subjectID, source: productData.source },
-      });
+  //   for (const productData of allProducts) {
+  //     const existingProduct = await this.productRepository.findOne({
+  //       where: { subjectID: productData.subjectID, source: productData.source },
+  //     });
 
-      if (existingProduct) {
-        existingProduct.title = productData.title || existingProduct.title;
-        existingProduct.description = productData.description || existingProduct.description;
-        existingProduct.brand = productData.brand || existingProduct.brand;
-        existingProduct.vendorCode = productData.vendorCode || existingProduct.vendorCode;
-        existingProduct.photos = productData.photos || existingProduct.photos;
-        existingProduct.dimensions = productData.dimensions || existingProduct.dimensions;
-        existingProduct.characteristics = productData.characteristics || existingProduct.characteristics;
-        existingProduct.sizes = productData.sizes || existingProduct.sizes;
-        existingProduct.updatedAt = new Date();
-        await this.productRepository.save(existingProduct);
-      } else {
-        // Создаем новый продукт
-        const newProduct = this.productRepository.create({
-          subjectID: productData.subjectID,
-          parentID: productData.parentID || null,
-          title: productData.title,
-          description: productData.description || '',
-          source: productData.source,
-          parentCategory: productData.parentCategory || '',
-          vendorCode: productData.vendorCode || '',
-          brand: productData.brand || '',
-          needKiz: productData.needKiz || false,
-          photos: productData.photos || null,
-          dimensions: productData.dimensions || null,
-          characteristics: productData.characteristics || null,
-          sizes: productData.sizes || null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
+  //     if (existingProduct) {
+  //       existingProduct.title = productData.title || existingProduct.title;
+  //       existingProduct.description = productData.description || existingProduct.description;
+  //       existingProduct.brand = productData.brand || existingProduct.brand;
+  //       existingProduct.vendorCode = productData.vendorCode || existingProduct.vendorCode;
+  //       existingProduct.photos = productData.photos || existingProduct.photos;
+  //       existingProduct.dimensions = productData.dimensions || existingProduct.dimensions;
+  //       existingProduct.characteristics = productData.characteristics || existingProduct.characteristics;
+  //       existingProduct.sizes = productData.sizes || existingProduct.sizes;
+  //       existingProduct.updatedAt = new Date();
+  //       await this.productRepository.save(existingProduct);
+  //     } else {
+  //       // Создаем новый продукт
+  //       const newProduct = this.productRepository.create({
+  //         subjectID: productData.subjectID,
+  //         parentID: productData.parentID || null,
+  //         title: productData.title,
+  //         description: productData.description || '',
+  //         source: productData.source,
+  //         parentCategory: productData.parentCategory || '',
+  //         vendorCode: productData.vendorCode || '',
+  //         brand: productData.brand || '',
+  //         needKiz: productData.needKiz || false,
+  //         photos: productData.photos || null,
+  //         dimensions: productData.dimensions || null,
+  //         characteristics: productData.characteristics || null,
+  //         sizes: productData.sizes || null,
+  //         createdAt: new Date(),
+  //         updatedAt: new Date(),
+  //       });
 
-        console.log(`Creating new product: ${newProduct.title}`);
-        await this.productRepository.save(newProduct);
-      }
-    }
+  //       console.log(`Creating new product: ${newProduct.title}`);
+  //       await this.productRepository.save(newProduct);
+  //     }
+  //   }
 
-    console.log('Products updated successfully.');
-    return this.productRepository.find();
-  }
+  //   console.log('Products updated successfully.');
+  //   return this.productRepository.find();
+  // }
 
 
   // Метод для получения всех товаров из базы данных
-  async getProducts() {
-    return this.productRepository.find();
+  async getProducts(userId:any) {
+    const wb = await this.fetchWildberriesProduct(userId)
+    const oz = await this.fetchOzonProducts(userId)
+    const products = [...wb, ...oz];
+
+    products.sort((a, b) => {
+      if (a.title < b.title) return -1;
+      if (a.title > b.title) return 1;
+    
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+    
+      return dateA - dateB;
+    });
+
+    return products;
   }
 }

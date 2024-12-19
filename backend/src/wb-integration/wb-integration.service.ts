@@ -13,14 +13,12 @@ export class WbIntegrationService {
   // Метод для записи токена в базу данных
   async setToken(token: string): Promise<void> {
     const existingToken = await this.tokenRepository.findOne({
-      where: { value: token },  // Поиск по значению токена
+      where: { value: token },  
     });
     if (existingToken) {
-      // Если токен уже есть в базе, обновляем его
       existingToken.value = token;
       await this.tokenRepository.save(existingToken);
     } else {
-      // Если токен отсутствует, создаем новый
       const newToken = this.tokenRepository.create({ value: token });
       await this.tokenRepository.save(newToken);
     }
