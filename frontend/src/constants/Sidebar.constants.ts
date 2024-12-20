@@ -15,11 +15,11 @@ export const expandedRouteItems = [
 				title: 'Список товаров',
 				routeLink: RoutePath.LIST_ITEM,
 			},
-			{
-				id: uuidv4(),
-				title: 'Добавить товары',
-				routeLink: RoutePath.ADDING_ITEM,
-			},
+			// {
+			// 	id: uuidv4(),
+			// 	title: 'Добавить товары',
+			// 	routeLink: RoutePath.ADDING_ITEM,
+			// },
 		],
 	},
 	{

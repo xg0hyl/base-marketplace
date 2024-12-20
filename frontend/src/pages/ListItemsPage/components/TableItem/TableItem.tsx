@@ -1,6 +1,7 @@
 import { TABLE_HEADER_ITEM } from '@constants/TableItem.constants';
 import { IProductsProps } from '@pages/ListItemsPage/ListItemsPage';
 import { FC } from 'react';
+import { icons } from '../../../../assets/public/index';
 
 export const TableItem: FC<{ products: IProductsProps[] }> = ({ products }) => {
    return (
@@ -45,8 +46,30 @@ export const TableItem: FC<{ products: IProductsProps[] }> = ({ products }) => {
                               )
                            }
                         </td>
-                        <td className="px-6 py-4 font-medium">
-                           {product.source}
+                        <td className="px-6 py-4 font-medium flex justify-center items-center">
+                           {
+                              product.source === 'Wildberries' ? (
+                                 <>
+                                    <img
+                                       src={icons.wildberriesLogo}
+                                       alt={product.source}
+                                       className='h-7 w-7 object-cover rounded-md'
+                                       />
+                                    {/* <span>{product.source}</span> */}
+                                 </>
+                              ) : (
+                                 <>
+                                    <img
+                                       src={icons.ozonLogo}
+                                       alt={product.source}
+                                       className='h-9 w-9'
+                                       />
+                                    {/* <span>{product.source}</span> */}
+
+                                 </>
+                                 
+                              )
+                           }
                         </td>
                         <td className="px-6 py-4">{product.title || '-'}</td>
                         {/* <td className="px-6 py-4">

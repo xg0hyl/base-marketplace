@@ -41,7 +41,7 @@ export const routerConfig = createBrowserRouter([
       element: (
          <ProtectedRoute>
             <Suspense fallback={<Loader />}>
-               <LazyMainPage />
+               <LazyListItemsPage />
             </Suspense>
          </ProtectedRoute>
       ),
