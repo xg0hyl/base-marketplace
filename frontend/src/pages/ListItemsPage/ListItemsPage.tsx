@@ -45,7 +45,9 @@ export interface IWarehouseWildberriesProps {
 }
 
 export default function ListItemsPage() {
+
    const [products, setProducts] = useState<IProductsProps[] | null>(null);
+   
    const [warehouseWildberries, setWarehouseWildberries] = useState<
       IWarehouseWildberriesProps[] | null,
    >(null);
@@ -77,6 +79,8 @@ export default function ListItemsPage() {
    const updateProducts = async () => {
       fetchProducts();
    };
+
+
    useEffect(() => {
       if (products) {
          const filtered = products.filter(
@@ -88,6 +92,7 @@ export default function ListItemsPage() {
       }
    }, [searchText, products]);
 
+   
    useEffect(() => {
       fetchProducts();
    }, []);

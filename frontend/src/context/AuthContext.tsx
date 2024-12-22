@@ -17,12 +17,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
    const [error, setError] = useState<string | null>(null);
 
    const loginUser = useCallback(
-      async (username: string, password: string, currentlyUser?: any) => {
+      async (name: string, password: string, currentlyUser?: any) => {
          try {
             setError(null);
             if (currentlyUser) {
                if (
-                  username === currentlyUser.username &&
+                  name === currentlyUser.name &&
                   password === currentlyUser.password
                ) {
                   console.log(true);
@@ -44,11 +44,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
    useEffect(() => {
       const currentlyUser = JSON.parse(
-         localStorage.getItem('user_currently_register_data') as string
+         localStorage.getItem('user') as string
       );
       if (currentlyUser) {
-         const { username, password } = currentlyUser;
-         loginUser(username, password, currentlyUser);
+         const { name, password } = currentlyUser;
+         loginUser(name, password, currentlyUser);
       }
    }, [loginUser]);
 

@@ -8,12 +8,12 @@ export class Users {
   @Column()
   email: string; 
 
-  @Column({ type: 'text' })
+  @Column()
   password: string;
   @Column()
   name: string;
 
-  @Column({ nullable: true })
+  @Column()
   phone: string; 
 
   @Column({ nullable: true })

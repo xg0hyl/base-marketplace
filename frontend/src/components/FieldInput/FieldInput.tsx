@@ -1,10 +1,7 @@
 import { ChangeEvent, DetailedHTMLProps, FC, InputHTMLAttributes } from 'react';
 
 interface InputProps
-   extends DetailedHTMLProps<
-      InputHTMLAttributes<HTMLInputElement>,
-      HTMLInputElement,
-   > {
+   extends DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement> {
    id: string;
    name: string;
    placeholder: string;

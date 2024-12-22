@@ -10,9 +10,14 @@ export class ProductController {
     return this.productService.getProducts(params.id);
   }
 
-  @Get('warehouse-wildberries')
-  async getWarehouseWildberries() {
-    // return this.productService.fetchGetWarehouseWildberriesProducts();
+  // @Get('warehouse-wildberries')
+  // async getWarehouseWildberries() {
+  //   // return this.productService.fetchGetWarehouseWildberriesProducts();
+  // }
+
+  @Post('stock-update')
+  async setStock(@Body() data: any){
+    return this.productService.setStock(data);
   }
 
   // @Get('update')

@@ -186,7 +186,7 @@ export class ProductService {
         )
       );
 
-      const productItems= response.data.result.items;
+      const productItems = response.data.result.items;
 
 
       if (Array.isArray(productItems)) {
@@ -233,64 +233,33 @@ export class ProductService {
     }
   }
 
-  // async updateProducts() {
-  //   const wbProducts = await this.fetchWildberriesProduct();
-  //   // const ozonProducts = await this.fetchOzonProducts();
 
-  //   const allProducts = [...wbProducts];
+  async fetchWarehouseListOzon(apiData:any){
+    try{
+      
+      // const response = await lastValueFrom(
+      //   this.httpService.post(
+      //     'https://api-seller.ozon.ru/v1/warehouse/list?Client-Id=2116437&Api-Key=26e433e9-3a02-4d19-8664-15f0518b199c',
+      //     {},
+      //     { 
+      //       headers: { 
+      //         'Client-Id': apiData.clientId,
+      //         'Api-Key': apiData.api_key,
+      //       },
+      //     },
+      //   )
+      // );
 
-  //   if (allProducts.length === 0) {
-  //     console.log('No products to update.');
-  //     return [];
-  //   }
+      // return response.data
+      return 1020005000058885
 
-  //   for (const productData of allProducts) {
-  //     const existingProduct = await this.productRepository.findOne({
-  //       where: { subjectID: productData.subjectID, source: productData.source },
-  //     });
-
-  //     if (existingProduct) {
-  //       existingProduct.title = productData.title || existingProduct.title;
-  //       existingProduct.description = productData.description || existingProduct.description;
-  //       existingProduct.brand = productData.brand || existingProduct.brand;
-  //       existingProduct.vendorCode = productData.vendorCode || existingProduct.vendorCode;
-  //       existingProduct.photos = productData.photos || existingProduct.photos;
-  //       existingProduct.dimensions = productData.dimensions || existingProduct.dimensions;
-  //       existingProduct.characteristics = productData.characteristics || existingProduct.characteristics;
-  //       existingProduct.sizes = productData.sizes || existingProduct.sizes;
-  //       existingProduct.updatedAt = new Date();
-  //       await this.productRepository.save(existingProduct);
-  //     } else {
-  //       // Создаем новый продукт
-  //       const newProduct = this.productRepository.create({
-  //         subjectID: productData.subjectID,
-  //         parentID: productData.parentID || null,
-  //         title: productData.title,
-  //         description: productData.description || '',
-  //         source: productData.source,
-  //         parentCategory: productData.parentCategory || '',
-  //         vendorCode: productData.vendorCode || '',
-  //         brand: productData.brand || '',
-  //         needKiz: productData.needKiz || false,
-  //         photos: productData.photos || null,
-  //         dimensions: productData.dimensions || null,
-  //         characteristics: productData.characteristics || null,
-  //         sizes: productData.sizes || null,
-  //         createdAt: new Date(),
-  //         updatedAt: new Date(),
-  //       });
-
-  //       console.log(`Creating new product: ${newProduct.title}`);
-  //       await this.productRepository.save(newProduct);
-  //     }
-  //   }
-
-  //   console.log('Products updated successfully.');
-  //   return this.productRepository.find();
-  // }
+    } catch (error) {
+      console.log('Error fetch ozon warehouse list: ' + error)
+      return []
+    }
+  }
 
 
-  // Метод для получения всех товаров из базы данных
   async getProducts(userId:any) {
     const wb = await this.fetchWildberriesProduct(userId)
     const oz = await this.fetchOzonProducts(userId)
@@ -308,4 +277,63 @@ export class ProductService {
 
     return products;
   }
+
+
+
+  async updateStocksOzon(data){
+    try{
+      const apiData = await this.userService.getOzIntegration(data.userId);
+      if (!apiData){
+        return
+      } 
+
+      const warehouseId = await this.fetchWarehouseListOzon(apiData)
+
+      const response = await lastValueFrom(
+        this.httpService.post(
+          'https://api-seller.ozon.ru/v2/products/stocks',
+          {
+            stocks:{
+              product_id: data.product.subjectID,
+              stock: data.value,
+              // warehouse_id: warehouseId
+            }
+          },
+          { 
+            headers: { 
+              'Client-Id': apiData.clientId,
+              'Api-Key': apiData.api_key,
+            },
+          },
+        )
+      );
+
+      console.log(response.data)
+      
+    } catch (error) {
+      console.log('error update ozon stocks: ' + error)
+    }
+  }
+
+  async updateStocksWb(data){
+    try{
+      const token = await this.userService.getWbToken(data.userId);
+      return token
+    } catch{
+      console.log('error update ozon stocks')
+    }
+  }
+
+  async setStock(data: any){
+    if (data.product.source == 'Wildberries'){
+        const result = await this.updateStocksWb(data)
+        console.log(result)
+    }
+    if (data.product.source == 'Ozon'){
+      const result = await this.updateStocksOzon(data)
+      console.log(result)
+    }
+  }
+
+
 }
