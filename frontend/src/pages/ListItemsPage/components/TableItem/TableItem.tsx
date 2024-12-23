@@ -5,7 +5,13 @@ import { icons } from '../../../../assets/public/index';
 import { useState, useRef } from 'react';
 import axios from 'axios';
 
-export const TableItem: FC<{ products: IProductsProps[] }> = ({ products }) => {
+interface TableItemProps {
+   products: IProductsProps[]
+   handleAddNotification: (message: string) => void
+   key: number
+}
+
+export const TableItem: FC<TableItemProps> = ({ products, handleAddNotification }) => {
 
    if (!products){
       return null
@@ -24,11 +30,19 @@ export const TableItem: FC<{ products: IProductsProps[] }> = ({ products }) => {
 
    const handleDoubleClick = (index: number) => {
       setActiveInput(index);
-      setTimeout(() => inputRefs.current[index]?.focus(), 0); 
+      setTimeout(() => {
+         if (inputRefs.current[index]) {
+            inputRefs.current[index]?.focus();
+            inputRefs.current[index]?.select();  
+         }
+      }, 0); 
    };
 
    const handleBlur = async (index: number, product: any) => {
       setActiveInput(null);
+      if (stockValues[index] == 0){
+         stockValues[index] = 'Нет на складе'
+      }
 
       if (stockValues[index] !== initialValues[index]) {
          const value = stockValues[index];
@@ -47,7 +61,17 @@ export const TableItem: FC<{ products: IProductsProps[] }> = ({ products }) => {
          
          const response = await axios.post('http://localhost:8081/products/stock-update', payment);
 
-         setInitialValues(stockValues)
+         if (response.data){
+            handleAddNotification('Остатки на складе обновлены')
+            setInitialValues(stockValues)
+
+         } else {
+            handleAddNotification('Произошла ошибка при обновлении остатков')
+            const updatedValues = [...stockValues];
+            updatedValues[index] = initialValues[index];
+            setStockValues(updatedValues);
+         }
+
       }
    };
 
@@ -142,7 +166,7 @@ export const TableItem: FC<{ products: IProductsProps[] }> = ({ products }) => {
                            <input
                               ref={(el) => (inputRefs.current[idx] = el)} 
                               type="text"
-                              className={`bg-gray-100 ${activeInput !== idx ? 'pointer-events-none' : ''}`}
+                              className={`bg-gray-100 w-24 ${activeInput !== idx ? 'pointer-events-none' : ''}`}
                               disabled={activeInput !== idx} 
                               onBlur={() => handleBlur(idx, product)}
                               onChange={(e) => handleChange(idx, e)}  

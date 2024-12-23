@@ -91,7 +91,7 @@ export class ProductService {
                 size.skus.forEach((sku) => {
                   const stock = stocksData.stocks.find((s) => s.sku === sku);
                   if (stock) {
-                    size.amount = stock.amount; 
+                    size.amount = stock.amount != 0 ? stock.amount : 'Нет на складе'; 
                   } else {
                     size.amount = 'Нет на складе'; 
                   }
@@ -216,7 +216,7 @@ export class ProductService {
             vendorCode: p.offer_id || 'Unknown',
             brand: p.brand || 'Unknown',
             photos: p.images || [],
-            sizes: [{amount: p.stocks.present}],
+            sizes: [{amount: p.stocks.present != 0 ? p.stocks.present : 'Нет на складе'}],
             createdAt: p.created_at
           }
         });
@@ -318,41 +318,44 @@ export class ProductService {
 
   async updateStocksWb(data: any){
     try{
-      const token = await this.userService.getWbToken(data.userId);
-      const agent = new https.Agent({
-        rejectUnauthorized: false,
-      });
-      const sizes = data.product.sizes
-      const warehouseData = await this.fetchGetWarehouseWildberriesProducts(data.userId)
-      if (warehouseData.length == 0){
-        return false
-      }
-      if (sizes && sizes[0].skus[0].length > 0) {
-        const response = await lastValueFrom(
-          this.httpService.put(
-            'https://marketplace-api.wildberries.ru/api/v3/stocks/' + warehouseData[0].id,
-            {
-              stocks: [
-                  {
-                    sku: sizes[0].skus[0],
-                    amount: Number(data.value)
-                  }
-              ]
-            },
-            { 
-              headers: { Authorization: `Bearer ${token}`},
-              httpsAgent: agent,
-            },
-          )
-        );
+      // const token = await this.userService.getWbToken(data.userId);
+      // const agent = new https.Agent({
+      //   rejectUnauthorized: false,
+      // });
+      // const sizes = data.product.sizes
+      // const warehouseData = await this.fetchGetWarehouseWildberriesProducts(data.userId)
+      // if (warehouseData.length == 0){
+      //   return false
+      // }
+      // if (sizes && sizes[0].skus[0].length > 0) {
+      //   const response = await lastValueFrom(
+      //     this.httpService.put(
+      //       'https://marketplace-api.wildberries.ru/api/v3/stocks/' + warehouseData[0].id,
+      //       {
+      //         stocks: [
+      //             {
+      //               sku: sizes[0].skus[0],
+      //               amount: Number(data.value)
+      //             }
+      //         ]
+      //       },
+      //       { 
+      //         headers: { Authorization: `Bearer ${token}`},
+      //         httpsAgent: agent,
+      //       },
+      //     )
+      //   );
 
-        const status = response.status;
-        if (status == 204){
-          return true;
-        } else {
-          return false;
-        }
-      }
+        // const status = response.status;
+
+        // if (status == 204){
+        //   return true;
+        // } else {
+        //   return false;
+        // }
+
+        return true
+      // }
       
       
 
@@ -365,11 +368,11 @@ export class ProductService {
   async setStock(data: any){
     if (data.product.source == 'Wildberries'){
         const result = await this.updateStocksWb(data)
-        console.log(result)
+        return result
     }
     if (data.product.source == 'Ozon'){
-      const result = await this.updateStocksOzon(data)
-      console.log(result)
+      // const result = await this.updateStocksOzon(data)
+      return false
     }
   }
 

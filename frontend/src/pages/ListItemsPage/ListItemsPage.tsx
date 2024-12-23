@@ -1,8 +1,10 @@
 import axios from 'axios';
-import { useEffect, useState } from 'react';
-
+import { useEffect, useState, useCallback } from 'react';
+import NotificationModal from '@components/NotificationModal/NotificationModal';
 import { TableItem } from './components/TableItem/TableItem';
 import { icons } from '../../assets/public/index';
+import { Transition } from "react-transition-group";
+
 
 export interface IProductsProps {
    id: number;
@@ -45,9 +47,10 @@ export interface IWarehouseWildberriesProps {
 }
 
 export default function ListItemsPage() {
-
+   const [notifications, setNotifications] = useState<{ id: number; message: string, visible: boolean }[]>([]);
    const [products, setProducts] = useState<IProductsProps[] | null>(null);
-   
+   const [key, setKey] = useState(0)
+
    const [warehouseWildberries, setWarehouseWildberries] = useState<
       IWarehouseWildberriesProps[] | null,
    >(null);
@@ -69,16 +72,41 @@ export default function ListItemsPage() {
       setProducts(response.data);
    };
 
-   // const fetchWarehouseWildberriesProducts = async () => {
-   //    const response = await axios.get(
-   //       'http://localhost:8081/products/warehouse-wildberries'
-   //    );
-   //    setWarehouseWildberries(response.data);
-   // };
+   const handleAddNotification = (message: string) => {
+      const newNotification = { id: Date.now(), message, visible: true };
+  
+      setNotifications((prev) => {
+          const newNotifications = [newNotification, ...prev]; 
+  
+          if (newNotifications.length > 3) {
+              newNotifications.pop(); 
+          }
+  
+          return newNotifications;
+      });
+  
+      setTimeout(() => {
+          setNotifications((prev) =>
+              prev.map((notification) =>
+                  notification.id === newNotification.id
+                      ? { ...notification, visible: false }
+                      : notification
+              )
+          );
+      }, 5000);
+  };
 
-   const updateProducts = async () => {
-      fetchProducts();
-   };
+    const handleExited = (id: number) => {
+      setNotifications((prev) => prev.filter((notification) => notification.id !== id));
+    };
+    
+
+    const updateProducts = useCallback(async () => {
+      handleAddNotification('Выполняется обновление таблицы');
+      await fetchProducts();
+      setKey(prevKey => prevKey + 1);
+      handleAddNotification('Таблица обновлена');
+   }, []);
 
 
    useEffect(() => {
@@ -89,7 +117,10 @@ export default function ListItemsPage() {
                product.source.toLowerCase().includes(searchText.toLowerCase())
          );
          setFilteredProducts(filtered);
+      } else {
+         setFilteredProducts(products);
       }
+
    }, [searchText, products]);
 
    
@@ -97,12 +128,30 @@ export default function ListItemsPage() {
       fetchProducts();
    }, []);
 
-   // useEffect(() => {
-   //    fetchWarehouseWildberriesProducts();
-   // }, []);
 
    return (
       <main>
+         <div>
+         {notifications.map((notification, index) => (
+              <Transition
+                  key={notification.id}
+                  in={notification.visible}
+                  timeout={500}
+                  mountOnEnter
+                  unmountOnExit
+                  onExited={() => handleExited(notification.id)}
+               >
+                  {(state: 'entering' | 'entered' | 'exiting' | 'exited') => (
+                     <NotificationModal
+                        onClose={() => setNotifications((prev) => prev.filter((item) => item.id !== notification.id))}
+                        state={state}
+                        notify={notification.message}
+                        index={index}
+                     />
+                  )}
+               </Transition>
+            ))}
+         </div>
          <div className="flex flex-col gap-8">
             <div className="flex justify-between items-center gap-4 p-8">
                <div className="flex items-center gap-4 ">
@@ -136,7 +185,7 @@ export default function ListItemsPage() {
                   </button>
                </div>
             </div>
-            <TableItem products={filteredProducts as IProductsProps[]} />
+            <TableItem key={key} products={filteredProducts as IProductsProps[]} handleAddNotification={handleAddNotification} />
          </div>
       </main>
    );

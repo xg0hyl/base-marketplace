@@ -9,3 +9,34 @@
       box-sizing: border-box;
    }
 }
+
+@keyframes slideUp {
+   0% {
+     opacity: 0;
+     transform: translateY(30px);
+   }
+   100% {
+     opacity: 1;
+     transform: translateY(0);
+   }
+ }
+ 
+ .notification-enter {
+   animation: slideUp 0.5s ease-out;
+ }
+ 
+ .notification-exit {
+   animation: slideUp 0.5s reverse ease-out;
+ }
+ 
+ .notification-modal {
+   transition: bottom 300ms ease-in-out;
+ }
+
+ .notification-enter.notification-enter-active {
+   animation: slideUp 0.5s ease-out;
+ }
+
+ .notification-exit.notification-exit-active {
+   animation: slideUp 0.5s reverse ease-out;
+ }

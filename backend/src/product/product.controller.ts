@@ -18,6 +18,7 @@ export class ProductController {
   @Post('stock-update')
   async setStock(@Body() data: any){
     return this.productService.setStock(data);
+    // return null
   }
 
   // @Get('update')
