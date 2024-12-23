@@ -19,7 +19,7 @@ const NotificationModal: FC<NotificationModalProps> = ({ onClose, state, notify,
       className={`notification-modal flex fixed right-5 z-50 w-auto max-w-xs bg-white border border-[#ACACAC] rounded-lg shadow-lg p-3 
         transition-all duration-300 
         ${state === "entered" ? "notification-enter" : 
-        state === "exiting" ? "notification-exit" : ""}
+        state === "exited" ? "notification-exit" : ""}
         `}
       style={{ bottom: `${bottomPosition}px` }}
     >
