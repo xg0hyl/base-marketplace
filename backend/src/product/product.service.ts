@@ -27,7 +27,8 @@ export class ProductService {
       });
       // Создаем запрос на получение контент от wildberries
       const response = await lastValueFrom(
-        this.httpService.post('https://content-api.wildberries.ru/content/v2/get/cards/list?locale=ru', {
+        this.httpService.post('https://content-api.wildberries.ru/content/v2/get/cards/list?locale=ru', 
+        {
           // создаем обязательное к запросу тело для отправки его вместе с запросом на конечный breakpoint
           settings: {
             sort: {
@@ -280,7 +281,7 @@ export class ProductService {
 
 
 
-  async updateStocksOzon(data){
+  async updateStocksOzon(data: any){
     try{
       const apiData = await this.userService.getOzIntegration(data.userId);
       if (!apiData){
@@ -315,12 +316,49 @@ export class ProductService {
     }
   }
 
-  async updateStocksWb(data){
+  async updateStocksWb(data: any){
     try{
       const token = await this.userService.getWbToken(data.userId);
-      return token
-    } catch{
-      console.log('error update ozon stocks')
+      const agent = new https.Agent({
+        rejectUnauthorized: false,
+      });
+      const sizes = data.product.sizes
+      const warehouseData = await this.fetchGetWarehouseWildberriesProducts(data.userId)
+      if (warehouseData.length == 0){
+        return false
+      }
+      if (sizes && sizes[0].skus[0].length > 0) {
+        const response = await lastValueFrom(
+          this.httpService.put(
+            'https://marketplace-api.wildberries.ru/api/v3/stocks/' + warehouseData[0].id,
+            {
+              stocks: [
+                  {
+                    sku: sizes[0].skus[0],
+                    amount: Number(data.value)
+                  }
+              ]
+            },
+            { 
+              headers: { Authorization: `Bearer ${token}`},
+              httpsAgent: agent,
+            },
+          )
+        );
+
+        const status = response.status;
+        if (status == 204){
+          return true;
+        } else {
+          return false;
+        }
+      }
+      
+      
+
+
+    } catch(error){
+      console.log('error update wb stocks: ' + error)
     }
   }
 
